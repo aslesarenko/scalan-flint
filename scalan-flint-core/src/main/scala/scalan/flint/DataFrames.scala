@@ -183,6 +183,11 @@ trait DataFrames extends Base {
   trait InputDFCompanion extends ConcreteClass1[InputDF] {
   }
 
+  abstract class PhysicalRddDF[T](val dataSourceId: Rep[String])(implicit val eT: Elem[T]) extends DataFrame[T] with FlintDataFrame[T] {
+  }
+  trait PhysicalRddDFCompanion extends ConcreteClass1[PhysicalRddDF] {
+  }
+
 }
 
 trait DataFramesDsl extends impl.DataFramesAbs with DataFrames with ScalanCommunityDsl {
