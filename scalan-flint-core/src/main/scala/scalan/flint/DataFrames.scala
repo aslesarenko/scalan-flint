@@ -190,12 +190,12 @@ trait DataFrames extends Base {
 
 }
 
-trait DataFramesDsl extends impl.DataFramesAbs with DataFrames with ScalanCommunityDsl {
+trait DataFramesDsl extends ScalanCommunityDsl with impl.DataFramesAbs {
 }
 
-trait DataFramesDslSeq extends impl.DataFramesSeq with ScalanSeq with ScalanCommunityDslSeq { }
+trait DataFramesDslSeq extends ScalanCommunityDslSeq with impl.DataFramesSeq { }
 
-trait DataFramesDslExp extends impl.DataFramesExp with ScalanExp with ScalanCommunityDslExp {
+trait DataFramesDslExp extends ScalanCommunityDslExp with impl.DataFramesExp {
 
   def compareField(a: Rep[Struct], b: Rep[Struct], fieldName: String, ascending: Boolean): Rep[Int] = {
     if (ascending)

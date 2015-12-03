@@ -6,7 +6,7 @@ import scalan.common.Default
 
 package impl {
 // Abs -----------------------------------
-trait DataFramesAbs extends DataFrames with Scalan {
+trait DataFramesAbs extends Scalan with DataFrames {
   self: DataFramesDsl =>
 
   // single proxy for each type family
@@ -36,7 +36,7 @@ trait DataFramesAbs extends DataFrames with Scalan {
     def convertDataFrame(x: Rep[DataFrame[T]]): Rep[To] = {
       x.selfType1 match {
         case _: DataFrameElem[_, _] => x.asRep[To]
-        case e => !!!(s"Expected $x to have DataFrameElem[_, _], but got $e")
+        case e => !!!(s"Expected $x to have DataFrameElem[_, _], but got $e", x)
       }
     }
 
@@ -56,8 +56,8 @@ trait DataFramesAbs extends DataFrames with Scalan {
     override def toString = "DataFrame"
   }
   def DataFrame: Rep[DataFrameCompanionAbs]
-  implicit def proxyDataFrameCompanion(p: Rep[DataFrameCompanion]): DataFrameCompanion =
-    proxyOps[DataFrameCompanion](p)
+  implicit def proxyDataFrameCompanionAbs(p: Rep[DataFrameCompanionAbs]): DataFrameCompanionAbs =
+    proxyOps[DataFrameCompanionAbs](p)
 
   abstract class AbsFlintFileDF[T]
       (fileName: Rep[String])(implicit eT: Elem[T])
@@ -87,14 +87,26 @@ trait DataFramesAbs extends DataFrames with Scalan {
 
   // 3) Iso for concrete class
   class FlintFileDFIso[T](implicit eT: Elem[T])
-    extends Iso[FlintFileDFData[T], FlintFileDF[T]] {
+    extends EntityIso[FlintFileDFData[T], FlintFileDF[T]] with Def[FlintFileDFIso[T]] {
     override def from(p: Rep[FlintFileDF[T]]) =
       p.fileName
     override def to(p: Rep[String]) = {
       val fileName = p
       FlintFileDF(fileName)
     }
-    lazy val eTo = new FlintFileDFElem[T](this)
+    lazy val eFrom = element[String]
+    lazy val eTo = new FlintFileDFElem[T](self)
+    lazy val selfType = new FlintFileDFIsoElem[T](eT)
+    def productArity = 1
+    def productElement(n: Int) = eT
+  }
+  case class FlintFileDFIsoElem[T](eT: Elem[T]) extends Elem[FlintFileDFIso[T]] {
+    def isEntityType = true
+    def getDefaultRep = reifyObject(new FlintFileDFIso[T]()(eT))
+    lazy val tag = {
+      implicit val tagT = eT.tag
+      weakTypeTag[FlintFileDFIso[T]]
+    }
   }
   // 4) constructor and deconstructor
   class FlintFileDFCompanionAbs extends CompanionDef[FlintFileDFCompanionAbs] with FlintFileDFCompanion {
@@ -126,7 +138,7 @@ trait DataFramesAbs extends DataFrames with Scalan {
 
   // 5) implicit resolution of Iso
   implicit def isoFlintFileDF[T](implicit eT: Elem[T]): Iso[FlintFileDFData[T], FlintFileDF[T]] =
-    cachedIso[FlintFileDFIso[T]](eT)
+    reifyObject(new FlintFileDFIso[T]()(eT))
 
   // 6) smart constructor and deconstructor
   def mkFlintFileDF[T](fileName: Rep[String])(implicit eT: Elem[T]): Rep[FlintFileDF[T]]
@@ -160,14 +172,26 @@ trait DataFramesAbs extends DataFrames with Scalan {
 
   // 3) Iso for concrete class
   class InputDFIso[T](implicit eT: Elem[T])
-    extends Iso[InputDFData[T], InputDF[T]] {
+    extends EntityIso[InputDFData[T], InputDF[T]] with Def[InputDFIso[T]] {
     override def from(p: Rep[InputDF[T]]) =
       p.dataSourceId
     override def to(p: Rep[String]) = {
       val dataSourceId = p
       InputDF(dataSourceId)
     }
-    lazy val eTo = new InputDFElem[T](this)
+    lazy val eFrom = element[String]
+    lazy val eTo = new InputDFElem[T](self)
+    lazy val selfType = new InputDFIsoElem[T](eT)
+    def productArity = 1
+    def productElement(n: Int) = eT
+  }
+  case class InputDFIsoElem[T](eT: Elem[T]) extends Elem[InputDFIso[T]] {
+    def isEntityType = true
+    def getDefaultRep = reifyObject(new InputDFIso[T]()(eT))
+    lazy val tag = {
+      implicit val tagT = eT.tag
+      weakTypeTag[InputDFIso[T]]
+    }
   }
   // 4) constructor and deconstructor
   class InputDFCompanionAbs extends CompanionDef[InputDFCompanionAbs] with InputDFCompanion {
@@ -199,7 +223,7 @@ trait DataFramesAbs extends DataFrames with Scalan {
 
   // 5) implicit resolution of Iso
   implicit def isoInputDF[T](implicit eT: Elem[T]): Iso[InputDFData[T], InputDF[T]] =
-    cachedIso[InputDFIso[T]](eT)
+    reifyObject(new InputDFIso[T]()(eT))
 
   // 6) smart constructor and deconstructor
   def mkInputDF[T](dataSourceId: Rep[String])(implicit eT: Elem[T]): Rep[InputDF[T]]
@@ -233,14 +257,26 @@ trait DataFramesAbs extends DataFrames with Scalan {
 
   // 3) Iso for concrete class
   class PhysicalRddDFIso[T](implicit eT: Elem[T])
-    extends Iso[PhysicalRddDFData[T], PhysicalRddDF[T]] {
+    extends EntityIso[PhysicalRddDFData[T], PhysicalRddDF[T]] with Def[PhysicalRddDFIso[T]] {
     override def from(p: Rep[PhysicalRddDF[T]]) =
       p.dataSourceId
     override def to(p: Rep[String]) = {
       val dataSourceId = p
       PhysicalRddDF(dataSourceId)
     }
-    lazy val eTo = new PhysicalRddDFElem[T](this)
+    lazy val eFrom = element[String]
+    lazy val eTo = new PhysicalRddDFElem[T](self)
+    lazy val selfType = new PhysicalRddDFIsoElem[T](eT)
+    def productArity = 1
+    def productElement(n: Int) = eT
+  }
+  case class PhysicalRddDFIsoElem[T](eT: Elem[T]) extends Elem[PhysicalRddDFIso[T]] {
+    def isEntityType = true
+    def getDefaultRep = reifyObject(new PhysicalRddDFIso[T]()(eT))
+    lazy val tag = {
+      implicit val tagT = eT.tag
+      weakTypeTag[PhysicalRddDFIso[T]]
+    }
   }
   // 4) constructor and deconstructor
   class PhysicalRddDFCompanionAbs extends CompanionDef[PhysicalRddDFCompanionAbs] with PhysicalRddDFCompanion {
@@ -272,7 +308,7 @@ trait DataFramesAbs extends DataFrames with Scalan {
 
   // 5) implicit resolution of Iso
   implicit def isoPhysicalRddDF[T](implicit eT: Elem[T]): Iso[PhysicalRddDFData[T], PhysicalRddDF[T]] =
-    cachedIso[PhysicalRddDFIso[T]](eT)
+    reifyObject(new PhysicalRddDFIso[T]()(eT))
 
   // 6) smart constructor and deconstructor
   def mkPhysicalRddDF[T](dataSourceId: Rep[String])(implicit eT: Elem[T]): Rep[PhysicalRddDF[T]]
@@ -282,7 +318,7 @@ trait DataFramesAbs extends DataFrames with Scalan {
 }
 
 // Seq -----------------------------------
-trait DataFramesSeq extends DataFramesDsl with ScalanSeq {
+trait DataFramesSeq extends ScalanSeq with DataFramesDsl {
   self: DataFramesDslSeq =>
   lazy val DataFrame: Rep[DataFrameCompanionAbs] = new DataFrameCompanionAbs {
   }
@@ -331,7 +367,7 @@ trait DataFramesSeq extends DataFramesDsl with ScalanSeq {
 }
 
 // Exp -----------------------------------
-trait DataFramesExp extends DataFramesDsl with ScalanExp {
+trait DataFramesExp extends ScalanExp with DataFramesDsl {
   self: DataFramesDslExp =>
   lazy val DataFrame: Rep[DataFrameCompanionAbs] = new DataFrameCompanionAbs {
   }
@@ -537,7 +573,7 @@ trait DataFramesExp extends DataFramesDsl with ScalanExp {
 }
 
 object DataFrames_Module extends scalan.ModuleInfo {
-  val dump = "H4sIAAAAAAAAAO1Xz28bRRSeXcdxbIc0RFVFK1WkxvwGO0VCPeRQpY6NgkwSZQNCpkIa746dKbOzm51xZHPoHwA3xIELgh6ReuOEkCokhIQ4cEKAxJlTW4QqoCcQb8a7693Ebt1K5IQPo93Zt+/H933vzfr6bZQVAXpK2JhhXnGJxBVLX68JWbbqXFI5eM1zeoysk85j3lefnv/szBcmOtFCs3tYrAvWQvnhRb3vx9cW2W+iPOY2EdILhETnmjpC1fYYI7akHq9S1+1J3Gak2qRCrjbRTNtzBvvoKjKaaNH2uB0QSawaw0IQEe7PEZURje/z+n6w5Y9i8KqqopqoYjfAVEL6EGNxaL9DfGvAPT5wJVoIU9vyVVpgk6Ou7wUyCpEDd3ueE93OcAwbaKl5BR/gKoToVi0ZUN6FN4s+tt/BXbIJJsp8BhIWhHV2B76+zzRRQZB9AGjD9Zne6fsIIWDgJZ1EZYRPJcanovApWySgmNF3sXq4HXj9ARr+jAxCfR9cvHAfF5EHUudO+b3L9lt3raJrqpf7KpWcrnAWHD0+QQ2aCsDx250PxJ1Xrl0wUaGFClSstYUMsC2TlIdoFTHnntQ5xwDioAtslSaxpaOsgc0hSeRtz/UxB08hlPPAE6M2lcpY7c2H7EyAPid9Epkafd+I612eUK/WTQ0ztn3z9ItP3qq/aSIzHSIPLi0QfhA5lSi/jiVuBGAT+lfrCYmMXQ2yWvL9aHOhwSiX07wxWnP3yDjG7umbvznfrKDLZox4mOB0JIOLrPj5x+IPz1400VxLt0SD4W4LQBd1RtytoOZx2UJz3gEJhk9yB5ipq7Gk5xzSwT0mQyqSGGYAQ4mWJzavTxTAq7pRjAiA4lDrmx4n5cZ2+S/ruw+vKykHaH74ZNjN/9ALf/+y0JFa5RLNdSjTzRlBnIFBECPyxCQZ+GQ7oC6MnQPy8tdfvv77jc2sVsJSWNQbmPXIcAiENY3qU2HNUkmi2ZHBYTYLw5QtzyWPlu7Qt6+9LzVvRj89Z7baV6CxV/V75+5BYTTv/mytmH+c/ukTE+WBqTaVLvbLK1N26X/YeSit84VaOOu19M6nHxZ1hzSAt/XG+HaIlxJAfTJhXktmXRqNuDOJCGeNSFTaCLgiu1HoGSX0+7bk0RRLsaLOTlYUwHFqp3mS3b54w0TZV1G2A60jmijb9nrciXCGU1CSvrwU7RlpnAFXDHMjxlX/ltGo3nFjp2ikazqGgXUEdXQI9XkHPFpeL7DJhnO0OdXyzHi3z+u18iCSym1wvyenktNiaHpcUkqmVkrYX/qf2qmofWR7byAoNNqO40xF8KnUC8dF89E0H4zsBHGzY0HKwPR/CCmMxypFRhrCGMel2P0YDFNfRQ9brVo/GtmEhoVRWTI8+nmlo4QcZh1AsPFD2ArPKIDq6t2PN5/7/vNf9aleUKcdfFfw+B9A8jQ/pLdRePioT+QMWlBnoM73X0MRGOFkDQAA"
+  val dump = "H4sIAAAAAAAAAO1XTWwbRRSeteP4L6QhlAoqVaTG/IPdIqEecqiCY6Mgk1jZgJCpQOPdsTNldnazM45sDj32ADfEDSFRiQtSL4gTQqqQEBLiwAmhSpw5laKqB3oC8Wa8u147dhNXIid8GO3Ovnk/3/e9mfH12yglfPS0sDDDvOQQiUumfl4TsmhWuaSy/4ZrdxlZJ+3H3O8+P//l6W8S6EQTze9isS5YE2UHD9WeFz2bZK+OsphbREjXFxKdresIZctljFiSurxMHacrcYuRcp0KuVpHcy3X7u+hK8iooyXL5ZZPJDErDAtBRDCfISojGr1n9Xt/yxvG4GVVRTlWxY6PqYT0IcbSwH6beGafu7zvSLQYpLblqbTAJk0dz/VlGCIN7nZdO3yd4xgm0HL9Mt7HZQjRKZvSp7wDK/Mett7HHbIJJsp8DhIWhLV3+p5+T9ZRTpA9AGjD8Zie6XkIIWDgZZ1EaYhPKcKnpPApmsSnmNEPsPrY8N1eHw1+RhKhngcuXjzEReiBVLld/PCS9c49M+8k1OKeSiWtK5wHR09MUYOmAnD8cftjcfe1axcSKNdEOSrWWkL62JJxygO08phzV+qcIwCx3wG2CtPY0lHWwGZMElnLdTzMwVMA5QLwxKhFpTJWcwsBO1OgT0uPhKZGzzOielem1Kt1U8GMNW49/tJTf1TfTqDEaIgsuDRB+H7oVKLsOpa45oNN4F+NJyQydjTIasj2wsnFGqNcHmXFcEzfJ+MIu2du/Wn/cA5dSkSIBwkejWRwkRI3f83/8tzFBMo0dUvUGO40AXRRZcTZ8isul02UcfeJP/iS3sdMPU0kPW2TNu4yGVARxzAJGEq0MrV5PaIAXtWNYoQA5Ada33Q5KdYaxb/Mnz65rqTso4XBl0E3/0Mv/P3bYltqlUuUaVOmmzOEOAkbQYTIk9Nk4JGGTx3YdvbJK99/++adG5sprYTloKi3MOuSwSYQ1DSsT4VNFAoSzQ8NxtnMDVI2XYc8XLhL3732kdS8Gb3RfWardRkae1WvO3sfCsP97qurVx+988V7j+g+zbSodLBXPDdDl4ZN9R92IRrV/GIl2Pe1DM+PfszrbqkBh+u1Ka2hxtPRNz0UgIGTsZWVeAGF2LJYsDNGqDVtBBSSnTCLOaX/Qzv1YLaFSGhnpgsNkDm1XT/Jbl+8kUCp11GqDR0l6ijVcrvcDiGHw1GSnnw1nDNGIQeIMWwnEcT6t4KG9U7ajfLGaE3HsI8dQB2Nob5gg0fT7foW2bAP9qwanp3s9gU9lmZRV3qDe105q7KWglXHpap4loWYfeV/lo/E8kON3b6g0HPbtj0r16dG1h4X4wczno33GIfzE/FKwlHxAKo4FLYRisamJ6C7HAWdgOzIxepBMVDjp0ObwDA3LFYGtwdeaiulBwX4EGzyhm0GRxsAeOXeZ5vP//z17/pikFOHJFxNePQnIn4hGBPkMDz8L4jlDApRR6fO91+o3K8Jpw0AAA=="
 }
 }
 
