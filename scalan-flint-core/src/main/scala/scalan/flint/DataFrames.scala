@@ -18,7 +18,7 @@ trait DataFrames extends Base {
     /**
      * Perform map-reduce
      */
-    def mapReduce[K,V](map: Rep[T => (K,V)], reduce: Rep[((V,V)) => V], estimation: Rep[Int]): DF[(K,V)]
+    def mapReduce[K:Elem,V:Elem](map: Rep[T => (K,V)], reduce: Rep[((V,V)) => V], estimation: Rep[Int]): DF[(K,V)]
 
     /**
      * Perform aggregation of input RDD
@@ -28,7 +28,7 @@ trait DataFrames extends Base {
     /**
      * Map records of input RDD
      */
-    def project[P](projection: Rep[T => P]): DF[P]
+    def project[P:Elem](projection: Rep[T => P]): DF[P]
 
     /**
      * Sort input RDD
@@ -48,7 +48,7 @@ trait DataFrames extends Base {
     /**
      * Left join two RDDs
      */
-    def join[I,K](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+    def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
                     estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)]
 
     /**
@@ -74,6 +74,11 @@ trait DataFrames extends Base {
      * Print RDD records to the stream
      */
     def saveFile(fileName: String)
+
+    /**
+      * Converts DataFrame to an Array
+      */
+    def toArray: Rep[Array[T]]
   }
   trait DataFrameCompanion {}
 
@@ -92,7 +97,7 @@ trait DataFrames extends Base {
      * template<class K,class V,void (*map)(Pair<K,V>& out, T const& in), void (*reduce)(V& dst, V const& src)>
      * RDD< Pair<K,V> >* mapReduce(size_t estimation);
      */
-     def mapReduce[K,V](map: Rep[T => (K,V)], reduce: Rep[((V,V)) => V], estimation: Rep[Int]): DF[(K,V)] =
+     def mapReduce[K:Elem,V:Elem](map: Rep[T => (K,V)], reduce: Rep[((V,V)) => V], estimation: Rep[Int]): DF[(K,V)] =
        externalMethod("Rdd", "mapReduce")
 
     /**
@@ -108,7 +113,7 @@ trait DataFrames extends Base {
      * template<class P, void (*projection)(P& out, T const& in)>
      * RDD<P>* project();
      */
-     def project[P](projection: Rep[T => P]): DF[P] =
+     def project[P:Elem](projection: Rep[T => P]): DF[P] =
       externalMethod("Rdd", "project")
 
     /**
@@ -138,7 +143,7 @@ trait DataFrames extends Base {
      * template<class I, class K, void (*outerKey)(K& key, T const& outer), void (*innerKey)(K& key, I const& inner)>
      * RDD< Join<T,I> >* join(RDD<I>* with, size_t estimation, JoinKind kind = InnerJoin);
      */
-     def join[I,K](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+     def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
                      estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] =
       externalMethod("Rdd", "join")
 
@@ -171,6 +176,11 @@ trait DataFrames extends Base {
      * void output(FILE* out);
      */
      def saveFile(fileName: String) = externalMethod("Rdd", "output")
+
+    /**
+      * Converts DataFrame to an Array
+      */
+    def toArray: Rep[Array[T]] = externalMethod("Rdd", "toArray")
   }
 
   abstract class FlintFileDF[T](val fileName: Rep[String])(implicit val eT: Elem[T]) extends DataFrame[T] with FlintDataFrame[T] {
@@ -188,6 +198,96 @@ trait DataFrames extends Base {
   trait PhysicalRddDFCompanion extends ConcreteClass1[PhysicalRddDF] {
   }
 
+  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] {
+    /**
+      * Filter input RDD
+      */
+    override def filter(p: Rep[T => Boolean]): DF[T] = ArrayDF(records.filterBy(p))
+
+    /**
+      * Perform map-reduce
+      */
+    override def mapReduce[K:Elem,V:Elem](map: Rep[T => (K,V)], reduce: Rep[((V,V)) => V], estimation: Rep[Int]): DF[(K,V)] = {
+      ArrayDF(records.mapReduceBy[K,V](map, reduce).toArray)
+    }
+
+    /**
+      * Perform aggregation of input RDD
+      */
+    def reduce[S](accumulate: Rep[((S,T)) => S], combine: Rep[((S,S)) => S], initState: Rep[S]): DF[S] = !!!
+
+    /**
+      * Map records of input RDD
+      */
+    override def project[P:Elem](projection: Rep[T => P]): DF[P] = {
+      ArrayDF(records.mapBy(projection))
+    }
+
+    /**
+      * Sort input RDD
+      */
+    def sort(compare: Rep[((T,T)) => Int], sizeEstimation: Rep[Int]): DF[T] = !!! // {
+//      class Ordrd(cmp: Rep[((T,T)) => Int]) extends Ordering[T] {
+//        override def compare(x: T, y: T): Int = {
+//          cmp((x, y))
+//        }
+//      }
+//
+//      ArrayDF(records.sort(new Ordrd(compare)))
+//    }
+
+    /**
+      * Sort input RDD
+      */
+    def sortBy(compare: Rep[Struct], sizeEstimation: Rep[Int]): DF[T] = !!!
+
+    /**
+      * Find top N records according to provided comparison function
+      */
+    def top(compare: Rep[((T,T)) => Int], n: Rep[Int]): DF[T] = !!!
+
+    def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
+      val map = MMultiMap.fromArray[K, I](inner.toArray.map(i => (inKey(i), i)))
+      ArrayDF[(T, I)](outer.toArray.flatMap(o => map(outKey(o)).toArray.map(i => (o, i))))
+    }
+
+    /**
+      * Left join two RDDs
+      */
+    def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+                  estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
+      joinTables[T,I,K](self, innerRdd, outerKey, innerKey)
+    }
+
+    /**
+      * Left simijoin two RDDs
+      */
+    def semijoin[I,K](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+                      estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = !!!
+
+    /**
+      * Replicate data between all nodes.
+      * Broadcast local RDD data to all nodes and gather data from all nodes.
+      * As a result all nodes get the same replicas of input data
+      */
+    def replicate: DF[T] = !!!
+
+    /**
+      * Return single record from input RDD or substitute it with default value of RDD is empty.
+      * This method is usful for obtaining aggregation result
+      */
+    def result(defaultValue: Rep[T]): Rep[T] = !!!
+
+    /**
+      * Print RDD records to the stream
+      */
+    def saveFile(fileName: String) = !!!
+
+    def toArray = records
+  }
+  trait ArrayDFCompanion extends ConcreteClass1[ArrayDF] {
+    def create[T:Elem](arr: Rep[Array[T]]): DF[T] = ArrayDF[T](arr)
+  }
 }
 
 trait DataFramesDsl extends ScalanCommunityDsl with impl.DataFramesAbs {

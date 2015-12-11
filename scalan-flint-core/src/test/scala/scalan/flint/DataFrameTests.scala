@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import scala.language.reflectiveCalls
 import scalan._
 import scalan.common.{SegmentsDsl, SegmentsDslExp, Lazy}
-import scalan.compilation.DummyCompiler
+import scalan.compilation.{DummyCompiler, DummyCompilerWithPasses}
 import scalan.flint.{DataFramesDslExp, DataFramesDsl}
 
 class DataFrameTests extends BaseViewTests {
@@ -136,6 +136,18 @@ class DataFrameTests extends BaseViewTests {
           .sort(compare, 100);
       }
     }
+
+    lazy val arrT1 = fun { (in: Rep[Array[(Int,Int)]]) =>
+      val arrayDf = ArrayDF(in)
+      arrayDf.filter(fun { p => p._1 > 10 })
+    }
+    lazy val arrT2 = fun { (in: Rep[(Array[(Int,Int)], Array[(Int,Double)])]) =>
+      val Pair(in1, in2) = in
+      val t1 = ArrayDF(in1)
+      val t2 = ArrayDF(in2)
+      t1.filter(fun { p => p._1 > 10 })
+        .join(t2, fun((r1: Rep[(Int,Int)]) => r1._1), fun((r2: Rep[(Int,Double)]) => r2._1), 1000, 0)
+    }
   }
 
   class Ctx extends TestCompilerContext {
@@ -146,7 +158,7 @@ class DataFrameTests extends BaseViewTests {
       //      override val cachePairs = false
 
     }
-    override val compiler = new DummyCompiler(new ScalanCake)
+    override val compiler = new DummyCompilerWithPasses(new ScalanCake)
       with StructsCompiler[ScalanCtxExp with MyProg]
 
     import compiler.scalan._
@@ -171,6 +183,17 @@ class DataFrameTests extends BaseViewTests {
     val ctx = new Ctx
     import ctx.compiler.scalan._
     ctx.emit("t2", t2)
+  }
+
+  test("arrT1") {
+    val ctx = new Ctx
+    import ctx.compiler.scalan._
+    ctx.test("arrT1", arrT1)
+  }
+  test("arrT2") {
+    val ctx = new Ctx
+    import ctx.compiler.scalan._
+    ctx.test("arrT2", arrT2)
   }
 
   test("compare") {
