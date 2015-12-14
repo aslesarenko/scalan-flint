@@ -148,6 +148,20 @@ class DataFrameTests extends BaseViewTests {
       t1.filter(fun { p => p._1 > 10 })
         .join(t2, fun((r1: Rep[(Int,Int)]) => r1._1), fun((r2: Rep[(Int,Double)]) => r2._1), 1000, 0)
     }
+    lazy val arrT3 = fun { (in: Rep[(Array[(Int,Int)], Array[(Int,Double)])]) =>
+      val Pair(in1, in2) = in
+      val t1 = ArrayDF(in1)
+      val t2 = ArrayDF(in2)
+      type JoinedRec = ((Int, Int), (Int, Double))
+      val cmp = fun({ (in: Rep[(JoinedRec, JoinedRec)]) =>
+        val Pair(Pair(Pair(in00, in01), Pair(in02, in03)), Pair(Pair(in10, in11), Pair(in12, in13))) = in
+        in00 - in10
+      })
+
+      t1.filter(fun { p => p._1 > 10 })
+        .join(t2, fun((r1: Rep[(Int,Int)]) => r1._1), fun((r2: Rep[(Int,Double)]) => r2._1), 1000, 0)
+        .sort(cmp, 1000)
+    }
   }
 
   class Ctx extends TestCompilerContext {
@@ -194,6 +208,11 @@ class DataFrameTests extends BaseViewTests {
     val ctx = new Ctx
     import ctx.compiler.scalan._
     ctx.test("arrT2", arrT2)
+  }
+  test("arrT3") {
+    val ctx = new Ctx
+    import ctx.compiler.scalan._
+    ctx.test("arrT3", arrT3)
   }
 
   test("compare") {

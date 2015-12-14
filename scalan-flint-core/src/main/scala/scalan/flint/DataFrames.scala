@@ -226,7 +226,8 @@ trait DataFrames extends Base {
     /**
       * Sort input RDD
       */
-    def sort(compare: Rep[((T,T)) => Int], sizeEstimation: Rep[Int]): DF[T] = !!! // {
+    def sort(compare: Rep[((T,T)) => Int], sizeEstimation: Rep[Int]): DF[T] = {
+      externalMethod("Rdd", "sort")
 //      class Ordrd(cmp: Rep[((T,T)) => Int]) extends Ordering[T] {
 //        override def compare(x: T, y: T): Int = {
 //          cmp((x, y))
@@ -234,7 +235,7 @@ trait DataFrames extends Base {
 //      }
 //
 //      ArrayDF(records.sort(new Ordrd(compare)))
-//    }
+    }
 
     /**
       * Sort input RDD

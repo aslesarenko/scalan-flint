@@ -74,18 +74,18 @@ object ScalanFlintBuild extends Build {
     base = file("scalan-flint-core")).addTestConfigsAndCommonSettings.
     settings(libraryDependencies ++= Seq(scalanCommon, scalanCommon % "test" classifier "tests", scalanCore, scalanCore % "test" classifier "tests", scalanLibrary, scalanLibrary % "test" classifier "tests"))
 
-//  lazy val backend = Project(
-//    id = "scalan-sql-lms-backend",
-//    base = file("scalan-sql-lms-backend"))
-//    .dependsOn(core.allConfigDependency)
-//    .addTestConfigsAndCommonSettings
-//    .settings(libraryDependencies ++= Seq(scalanLms,
-//       "org.scala-lang.virtualized" % "scala-library" % virtScala,
-//       "org.scala-lang.virtualized" % "scala-compiler" % virtScala),
-//      scalaOrganization := "org.scala-lang.virtualized",
-//      scalaVersion := virtScala,
-//      fork in Test := true,
-//      fork in ItTest := true)
+  lazy val backend = Project(
+    id = "scalan-flint-lms-backend",
+    base = file("scalan-flint-lms-backend"))
+    .dependsOn(core.allConfigDependency)
+    .addTestConfigsAndCommonSettings
+    .settings(libraryDependencies ++= Seq(scalanLms,
+       "org.scala-lang.virtualized" % "scala-library" % virtScala,
+       "org.scala-lang.virtualized" % "scala-compiler" % virtScala),
+      scalaOrganization := "org.scala-lang.virtualized",
+      scalaVersion := virtScala,
+      fork in Test := true,
+      fork in ItTest := true)
       
   lazy val root = Project(
     id = "scalan-flint",

@@ -864,7 +864,17 @@ trait DataFramesExp extends ScalanExp with DataFramesDsl {
 
     // WARNING: Cannot generate matcher for method `saveFile`: Method's return type Unit is not a Rep
 
-    // WARNING: Cannot generate matcher for method `toArray`: Method's return type Array[T] is not a Rep
+    object toArray {
+      def unapply(d: Def[_]): Option[Rep[DataFrame[T]] forSome {type T}] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[DataFrameElem[_, _]] && method.getName == "toArray" =>
+          Some(receiver).asInstanceOf[Option[Rep[DataFrame[T]] forSome {type T}]]
+        case _ => None
+      }
+      def unapply(exp: Exp[_]): Option[Rep[DataFrame[T]] forSome {type T}] = exp match {
+        case Def(d) => unapply(d)
+        case _ => None
+      }
+    }
   }
 
   object DataFrameCompanionMethods {
