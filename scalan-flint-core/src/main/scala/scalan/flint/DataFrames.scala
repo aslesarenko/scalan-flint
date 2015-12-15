@@ -178,9 +178,9 @@ trait DataFrames extends Base {
      def saveFile(fileName: String) = externalMethod("Rdd", "output")
 
     /**
-      * Converts DataFrame to an Array
-      */
-    def toArray: Rep[Array[T]] = externalMethod("Rdd", "toArray")
+     * Converts DataFrame to an Array
+     */
+     def toArray: Rep[Array[T]] = !!!
   }
 
   abstract class FlintFileDF[T](val fileName: Rep[String])(implicit val eT: Elem[T]) extends DataFrame[T] with FlintDataFrame[T] {
@@ -198,7 +198,7 @@ trait DataFrames extends Base {
   trait PhysicalRddDFCompanion extends ConcreteClass1[PhysicalRddDF] {
   }
 
-  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] {
+  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] with FlintDataFrame[T] {
     /**
       * Filter input RDD
       */
@@ -212,40 +212,11 @@ trait DataFrames extends Base {
     }
 
     /**
-      * Perform aggregation of input RDD
-      */
-    def reduce[S](accumulate: Rep[((S,T)) => S], combine: Rep[((S,S)) => S], initState: Rep[S]): DF[S] = !!!
-
-    /**
       * Map records of input RDD
       */
     override def project[P:Elem](projection: Rep[T => P]): DF[P] = {
       ArrayDF(records.mapBy(projection))
     }
-
-    /**
-      * Sort input RDD
-      */
-    def sort(compare: Rep[((T,T)) => Int], sizeEstimation: Rep[Int]): DF[T] = {
-      externalMethod("Rdd", "sort")
-//      class Ordrd(cmp: Rep[((T,T)) => Int]) extends Ordering[T] {
-//        override def compare(x: T, y: T): Int = {
-//          cmp((x, y))
-//        }
-//      }
-//
-//      ArrayDF(records.sort(new Ordrd(compare)))
-    }
-
-    /**
-      * Sort input RDD
-      */
-    def sortBy(compare: Rep[Struct], sizeEstimation: Rep[Int]): DF[T] = !!!
-
-    /**
-      * Find top N records according to provided comparison function
-      */
-    def top(compare: Rep[((T,T)) => Int], n: Rep[Int]): DF[T] = !!!
 
     def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
       val map = MMultiMap.fromArray[K, I](inner.toArray.map(i => (inKey(i), i)))
@@ -255,36 +226,15 @@ trait DataFrames extends Base {
     /**
       * Left join two RDDs
       */
-    def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+    override def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
                   estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
       joinTables[T,I,K](self, innerRdd, outerKey, innerKey)
     }
 
     /**
-      * Left simijoin two RDDs
+      * Converts DataFrame to an Array
       */
-    def semijoin[I,K](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
-                      estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = !!!
-
-    /**
-      * Replicate data between all nodes.
-      * Broadcast local RDD data to all nodes and gather data from all nodes.
-      * As a result all nodes get the same replicas of input data
-      */
-    def replicate: DF[T] = !!!
-
-    /**
-      * Return single record from input RDD or substitute it with default value of RDD is empty.
-      * This method is usful for obtaining aggregation result
-      */
-    def result(defaultValue: Rep[T]): Rep[T] = !!!
-
-    /**
-      * Print RDD records to the stream
-      */
-    def saveFile(fileName: String) = !!!
-
-    def toArray = records
+    override def toArray = records
   }
   trait ArrayDFCompanion extends ConcreteClass1[ArrayDF] {
     def create[T:Elem](arr: Rep[Array[T]]): DF[T] = ArrayDF[T](arr)
