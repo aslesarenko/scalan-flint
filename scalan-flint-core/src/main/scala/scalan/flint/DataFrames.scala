@@ -198,24 +198,25 @@ trait DataFrames extends Base {
   trait PhysicalRddDFCompanion extends ConcreteClass1[PhysicalRddDF] {
   }
 
-  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] with FlintDataFrame[T] {
+  @InternalType
+  trait TableDF[T] extends DataFrame[T] with FlintDataFrame[T] {
     /**
       * Filter input RDD
       */
-    override def filter(p: Rep[T => Boolean]): DF[T] = ArrayDF(records.filterBy(p))
+    override def filter(p: Rep[T => Boolean]): DF[T] = ArrayDF(toArray.filterBy(p))
 
     /**
       * Perform map-reduce
       */
     override def mapReduce[K:Elem,V:Elem](map: Rep[T => (K,V)], reduce: Rep[((V,V)) => V], estimation: Rep[Int]): DF[(K,V)] = {
-      ArrayDF(records.mapReduceBy[K,V](map, reduce).toArray)
+      ArrayDF(toArray.mapReduceBy[K,V](map, reduce).toArray)
     }
 
     /**
       * Map records of input RDD
       */
     override def project[P:Elem](projection: Rep[T => P]): DF[P] = {
-      ArrayDF(records.mapBy(projection))
+      ArrayDF(toArray.mapBy(projection))
     }
 
     def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
@@ -227,10 +228,12 @@ trait DataFrames extends Base {
       * Left join two RDDs
       */
     override def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
-                  estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
+                                     estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
       joinTables[T,I,K](self, innerRdd, outerKey, innerKey)
     }
+  }
 
+  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] with TableDF[T] {
     /**
       * Converts DataFrame to an Array
       */
@@ -239,6 +242,41 @@ trait DataFrames extends Base {
   trait ArrayDFCompanion extends ConcreteClass1[ArrayDF] {
     def create[T:Elem](arr: Rep[Array[T]]): DF[T] = ArrayDF[T](arr)
   }
+
+  abstract class PairDF[L, R](val left: DF[L], val right: DF[R])
+                            (implicit val eL: Elem[L], val eR: Elem[R])
+    extends DataFrame[(L, R)] with TableDF[(L, R)] {
+
+    val eT = element[(L, R)]
+    /**
+      * Converts DataFrame to an Array
+      */
+    override def toArray = left.toArray zip right.toArray
+  }
+  trait PairDFCompanion extends ConcreteClass2[PairDF] {
+    def create[L:Elem, R:Elem](left: DF[L], right: DF[R]): DF[(L, R)] = PairDF[L,R](left, right)
+  }
+
+  abstract class ShardedDF[T](val nShards: Rep[Int], val distrib: Rep[T => Int], val shards: Rep[Array[DataFrame[T]]])
+                             (implicit val eT: Elem[T])
+    extends DataFrame[T] with TableDF[T] {
+    /**
+      * Converts DataFrame to an Array
+      */
+    override def toArray = shards.fold[ArrayBuffer[T]](ArrayBuffer.empty[T], fun{ p: Rep[(ArrayBuffer[T], DataFrame[T])] => p._1 ++= p._2.toArray})
+//    override def toArray = {
+//      val lElem = toLazyElem(pairElement(element[ArrayBuffer[T]], element[DataFrame[T]]))
+//      val f = fun { p: Rep[(ArrayBuffer[T], DataFrame[T])] => p._1 ++= p._2.toArray }(lElem, element[ArrayBuffer[T]])
+//      array_fold[DataFrame[T], ArrayBuffer[T]](shards, ArrayBuffer.empty[T], f)
+//    }
+  }
+  trait ShardedDFCompanion extends ConcreteClass1[ShardedDF] {
+    def create[T:Elem](nShards: Rep[Int], createShard: Rep[Int => DataFrame[T]], distrib: Rep[T => Int]): DF[T] = {
+      val shards = SArray.repeat[DataFrame[T]](nShards)(createShard)
+      ShardedDF(nShards, distrib, shards)
+    }
+  }
+
 }
 
 trait DataFramesDsl extends ScalanCommunityDsl with impl.DataFramesAbs {
