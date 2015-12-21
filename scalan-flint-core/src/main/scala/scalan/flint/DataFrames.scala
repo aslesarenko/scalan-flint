@@ -233,7 +233,7 @@ trait DataFrames extends Base {
     }
   }
 
-  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] with TableDF[T] {
+  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends TableDF[T] {
     /**
       * Converts DataFrame to an Array
       */
@@ -245,7 +245,7 @@ trait DataFrames extends Base {
 
   abstract class PairDF[L, R](val left: DF[L], val right: DF[R])
                             (implicit val eL: Elem[L], val eR: Elem[R])
-    extends DataFrame[(L, R)] with TableDF[(L, R)] {
+    extends TableDF[(L, R)] {
 
     val eT = element[(L, R)]
     /**
@@ -259,7 +259,7 @@ trait DataFrames extends Base {
 
   abstract class ShardedDF[T](val nShards: Rep[Int], val distrib: Rep[T => Int], val shards: Rep[Array[DataFrame[T]]])
                              (implicit val eT: Elem[T])
-    extends DataFrame[T] with TableDF[T] {
+    extends TableDF[T] {
     /**
       * Converts DataFrame to an Array
       */
