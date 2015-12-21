@@ -166,14 +166,14 @@ class DataFrameTests extends BaseViewTests {
 
   class Ctx extends TestCompilerContext {
 
-    class ScalanCake extends ScalanCtxExp with MyProg with DataFramesDslExp {
+    class ScalanCake extends ScalanDslExp with MyProg with DataFramesDslExp {
       override val cacheElems = false
       //      override val cacheIsos = false
       //      override val cachePairs = false
 
     }
     override val compiler = new DummyCompilerWithPasses(new ScalanCake)
-      with StructsCompiler[ScalanCtxExp with MyProg]
+      with StructsCompiler[ScalanDslExp with MyProg]
 
     import compiler.scalan._
 

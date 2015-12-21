@@ -56,13 +56,13 @@ object ScalanFlintBuild extends Build {
   
   def liteProject(name: String) = ProjectRef(file("../scalan-lite"), name)
 
-  def liteDependency(name: String) = "com.huawei.scalan" %% name % "0.2.11-SNAPSHOT"
+  def scalanDependency(name: String) = "com.huawei.scalan" %% name % "0.3.0-SNAPSHOT"
 
-  lazy val scalanMeta = liteDependency("scalan-meta")
-  lazy val scalanCommon = liteDependency("scalan-common")
-  lazy val scalanCore = liteDependency("scalan-core")
-  lazy val scalanLibrary = liteDependency("scalan-library")
-  lazy val scalanLms = liteDependency("scalan-lms-backend")
+  lazy val scalanMeta = scalanDependency("scalan-meta")
+  lazy val scalanCommon = scalanDependency("scalan-common")
+  lazy val scalanCore = scalanDependency("scalan-core")
+  lazy val scalanCollections = scalanDependency("scalan-collections")
+  lazy val scalanLms = scalanDependency("scalan-lms-backend-core")
 
   lazy val meta = Project(
     id = "scalan-flint-meta",
@@ -72,7 +72,7 @@ object ScalanFlintBuild extends Build {
   lazy val core = Project(
     id = "scalan-flint-core",
     base = file("scalan-flint-core")).addTestConfigsAndCommonSettings.
-    settings(libraryDependencies ++= Seq(scalanCommon, scalanCommon % "test" classifier "tests", scalanCore, scalanCore % "test" classifier "tests", scalanLibrary, scalanLibrary % "test" classifier "tests"))
+    settings(libraryDependencies ++= Seq(scalanCommon, scalanCommon % "test" classifier "tests", scalanCore, scalanCore % "test" classifier "tests", scalanCollections, scalanCollections % "test" classifier "tests"))
 
   lazy val backend = Project(
     id = "scalan-flint-lms-backend",

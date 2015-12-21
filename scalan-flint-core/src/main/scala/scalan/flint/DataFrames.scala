@@ -1,6 +1,7 @@
 package scalan.flint
 
 import scalan._
+import scalan.collections._
 
 trait DataFrames extends Base {
   self: DataFramesDsl =>
@@ -279,12 +280,12 @@ trait DataFrames extends Base {
 
 }
 
-trait DataFramesDsl extends ScalanCommunityDsl with impl.DataFramesAbs {
+trait DataFramesDsl extends CollectionsDsl with MultiMapsDsl with impl.DataFramesAbs {
 }
 
-trait DataFramesDslSeq extends ScalanCommunityDslSeq with impl.DataFramesSeq { }
+trait DataFramesDslSeq extends CollectionsDslSeq with MultiMapsDslSeq with impl.DataFramesSeq { }
 
-trait DataFramesDslExp extends ScalanCommunityDslExp with impl.DataFramesExp {
+trait DataFramesDslExp extends CollectionsDslExp with MultiMapsDslExp with impl.DataFramesExp {
 
   def compareField(a: Rep[Struct], b: Rep[Struct], fieldName: String, ascending: Boolean): Rep[Int] = {
     if (ascending)

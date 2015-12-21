@@ -1,9 +1,7 @@
 package scalan.it
 
-import scalan.compilation.lms.CommunityBridge
-import scalan.compilation.lms.uni.LmsCompilerUni
-import scalan.compilation.lms.scalac.CommunityLmsCompilerScala
 import scalan.flint.{DataFramesDslExp, DataFramesDslSeq, DataFramesDsl}
+import scalan.compilation.lms.scalac._
 
 /**
   * Created by dkolmakov on 12/14/15.
@@ -59,7 +57,7 @@ class DataFrameItTests extends BaseItTests[DataFrameItTestsProg](new DataFrameIt
     //      override val cachePairs = false
   }
 
-  val compiler = new CommunityLmsCompilerScala[ScalanCake](new ScalanCake) with CommunityBridge
+  val compiler = new LmsCompilerScala[ScalanCake](new ScalanCake)
   override val defaultCompilers = compilers(compiler)
 
   test("arrT1") {
