@@ -286,6 +286,22 @@ trait DataFramesDslSeq extends ScalanCommunityDslSeq with impl.DataFramesSeq { }
 
 trait DataFramesDslExp extends ScalanCommunityDslExp with impl.DataFramesExp {
 
+  def isPairSplit(l1: Lambda[_,_], l2: Lambda[_,_]): Boolean = {
+    val pair1 = l1.x
+    val pair2 = l2.x
+    (l1.y, l2.y) match {
+      case (Def(First(`pair1`)), Def(Second(`pair2`))) => true
+      case _ => false
+    }
+  }
+
+  override def rewriteDef[T](d: Def[T]) = d match {
+    case ArrayZip(Def(ArrayMap(arr1, Def(l1: Lambda[a, b]))), Def(ArrayMap(arr2, Def(l2: Lambda[c, d]))))
+      if arr1 == arr2 && isPairSplit(l1, l2) =>
+        arr1
+    case _ => super.rewriteDef(d)
+  }
+
   def compareField(a: Rep[Struct], b: Rep[Struct], fieldName: String, ascending: Boolean): Rep[Int] = {
     if (ascending)
       compare(a(fieldName), b(fieldName), Nil)

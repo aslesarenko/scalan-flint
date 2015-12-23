@@ -13,7 +13,7 @@ trait DataFrameItTestsProg extends DataFramesDsl {
   lazy val t1 = fun { (in: DF[(Int,Int)]) =>
     in.filter(fun { p => p._1 > 10 })
   }
-  lazy val t2 = fun { (in: Rep[(DataFrame[(Int,Int)], DataFrame[(Int,Double)])]) =>
+  lazy val t2 = fun { in: Rep[(DataFrame[(Int,Int)], DataFrame[(Int,Double)])] =>
     val Pair(in1, in2) = in
     in1.filter(fun { p => p._1 > 10 })
       .join(in2, fun((r1: Rep[(Int,Int)]) => r1._1), fun((r2: Rep[(Int,Double)]) => r2._1), 1000, 0)
