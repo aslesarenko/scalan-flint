@@ -233,7 +233,7 @@ trait DataFrames extends Base {
     }
   }
 
-  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends TableDF[T] {
+  abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] with TableDF[T] {
     /**
       * Converts DataFrame to an Array
       */
@@ -245,7 +245,7 @@ trait DataFrames extends Base {
 
   abstract class PairDF[L, R](val left: DF[L], val right: DF[R])
                             (implicit val eL: Elem[L], val eR: Elem[R])
-    extends TableDF[(L, R)] {
+    extends DataFrame[(L, R)] with TableDF[(L, R)] {
 
     val eT = element[(L, R)]
     /**
@@ -259,21 +259,39 @@ trait DataFrames extends Base {
 
   abstract class ShardedDF[T](val nShards: Rep[Int], val distrib: Rep[T => Int], val shards: Rep[Array[DataFrame[T]]])
                              (implicit val eT: Elem[T])
-    extends TableDF[T] {
+    extends DataFrame[T] with TableDF[T] {
+    /**
+      * Filter input RDD
+      */
+    override def filter(p: Rep[T => Boolean]): DF[T] =
+      ShardedViewDF.create(nShards, fun{node => shards(node).filter(p)})
     /**
       * Converts DataFrame to an Array
       */
     override def toArray = shards.fold[ArrayBuffer[T]](ArrayBuffer.empty[T], fun{ p: Rep[(ArrayBuffer[T], DataFrame[T])] => p._1 ++= p._2.toArray})
-//    override def toArray = {
-//      val lElem = toLazyElem(pairElement(element[ArrayBuffer[T]], element[DataFrame[T]]))
-//      val f = fun { p: Rep[(ArrayBuffer[T], DataFrame[T])] => p._1 ++= p._2.toArray }(lElem, element[ArrayBuffer[T]])
-//      array_fold[DataFrame[T], ArrayBuffer[T]](shards, ArrayBuffer.empty[T], f)
-//    }
   }
   trait ShardedDFCompanion extends ConcreteClass1[ShardedDF] {
     def create[T:Elem](nShards: Rep[Int], createShard: Rep[Int => DataFrame[T]], distrib: Rep[T => Int]): DF[T] = {
       val shards = SArray.repeat[DataFrame[T]](nShards)(createShard)
       ShardedDF(nShards, distrib, shards)
+    }
+  }
+
+  abstract class ShardedViewDF[T](val nShards: Rep[Int], val view: Rep[Int => DataFrame[T]])
+                                 (implicit val eT: Elem[T])
+    extends DataFrame[T] with TableDF[T] {
+    /**
+      * Converts DataFrame to an Array
+      */
+    override def toArray = {
+      val shards = par(nShards, (node: Rep[Int]) => view(node).toArray)
+      shards.fold[ArrayBuffer[T]](ArrayBuffer.empty[T], fun { p => p._1 ++= p._2 })
+    }
+  }
+
+  trait ShardedViewDFCompanion extends ConcreteClass1[ShardedViewDF] {
+    def create[T:Elem](nShards: Rep[Int], view: Rep[Int => DataFrame[T]]): DF[T] = {
+      ShardedViewDF(nShards, view)
     }
   }
 
