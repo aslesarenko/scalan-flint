@@ -5,6 +5,9 @@ import scalan._
 trait DataFrames extends Base {
   self: DataFramesDsl =>
 
+  def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)]
+  def joinShardedTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)]
+
   type DF[T] = Rep[DataFrame[T]]
 
   trait DataFrame[T] extends Def[DataFrame[T]] {
@@ -79,6 +82,10 @@ trait DataFrames extends Base {
       * Converts DataFrame to an Array
       */
     def toArray: Rep[Array[T]]
+
+    def getShard(node: Rep[Int]): DF[T]
+    def gather: DF[T]
+    def nShards: Rep[Int]
   }
   trait DataFrameCompanion {}
 
@@ -181,6 +188,9 @@ trait DataFrames extends Base {
      * Converts DataFrame to an Array
      */
      def toArray: Rep[Array[T]] = !!!
+     def getShard(node: Rep[Int]): DF[T] = !!!
+     def gather: DF[T] = !!!
+     def nShards: Rep[Int] = !!!
   }
 
   abstract class FlintFileDF[T](val fileName: Rep[String])(implicit val eT: Elem[T]) extends DataFrame[T] with FlintDataFrame[T] {
@@ -200,6 +210,7 @@ trait DataFrames extends Base {
 
   @InternalType
   trait TableDF[T] extends DataFrame[T] with FlintDataFrame[T] {
+
     /**
       * Filter input RDD
       */
@@ -219,11 +230,6 @@ trait DataFrames extends Base {
       ArrayDF(toArray.mapBy(projection))
     }
 
-    def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
-      val map = MMultiMap.fromArray[K, I](inner.toArray.map(i => (inKey(i), i)))
-      ArrayDF[(T, I)](outer.toArray.flatMap(o => map(outKey(o)).toArray.map(i => (o, i))))
-    }
-
     /**
       * Left join two RDDs
       */
@@ -231,6 +237,10 @@ trait DataFrames extends Base {
                                      estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
       joinTables[T,I,K](self, innerRdd, outerKey, innerKey)
     }
+
+    override def getShard(node: Rep[Int]): DF[T] = ArrayDF(toArray)
+    override def gather: DF[T] = ArrayDF(toArray)
+    override def nShards: Rep[Int] = 1
   }
 
   abstract class ArrayDF[T](val records: Rep[Array[T]])(implicit val eT: Elem[T]) extends DataFrame[T] with TableDF[T] {
@@ -257,7 +267,7 @@ trait DataFrames extends Base {
     def create[L:Elem, R:Elem](left: DF[L], right: DF[R]): DF[(L, R)] = PairDF[L,R](left, right)
   }
 
-  abstract class ShardedDF[T](val nShards: Rep[Int], val distrib: Rep[T => Int], val shards: Rep[Array[DataFrame[T]]])
+  abstract class ShardedDF[T](override val nShards: Rep[Int], val distrib: Rep[T => Int], val shards: Rep[Array[DataFrame[T]]])
                              (implicit val eT: Elem[T])
     extends DataFrame[T] with TableDF[T] {
     /**
@@ -265,10 +275,23 @@ trait DataFrames extends Base {
       */
     override def filter(p: Rep[T => Boolean]): DF[T] =
       ShardedViewDF.create(nShards, fun{node => shards(node).filter(p)})
+
+    /**
+      * Left join two RDDs
+      */
+    override def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+                                     estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
+      joinShardedTables[T,I,K](this, innerRdd, outerKey, innerKey)
+    }
+
     /**
       * Converts DataFrame to an Array
       */
-    override def toArray = shards.fold[ArrayBuffer[T]](ArrayBuffer.empty[T], fun{ p: Rep[(ArrayBuffer[T], DataFrame[T])] => p._1 ++= p._2.toArray})
+    override def toArray =
+      ShardedViewDF.create(nShards, fun{node => shards(node)}).toArray
+
+    override def getShard(node: Rep[Int]): DF[T] = shards(node)
+    override def gather = ArrayDF(toArray)
   }
   trait ShardedDFCompanion extends ConcreteClass1[ShardedDF] {
     def create[T:Elem](nShards: Rep[Int], createShard: Rep[Int => DataFrame[T]], distrib: Rep[T => Int]): DF[T] = {
@@ -277,9 +300,17 @@ trait DataFrames extends Base {
     }
   }
 
-  abstract class ShardedViewDF[T](val nShards: Rep[Int], val view: Rep[Int => DataFrame[T]])
+  abstract class ShardedViewDF[T](override val nShards: Rep[Int], val view: Rep[Int => DataFrame[T]])
                                  (implicit val eT: Elem[T])
     extends DataFrame[T] with TableDF[T] {
+    /**
+      * Left join two RDDs
+      */
+    override def join[I:Elem,K:Elem](innerRdd: DF[I], outerKey: Rep[T=>K], innerKey: Rep[I=>K],
+                                     estimation: Rep[Int], kind: Rep[Int]): DF[(T,I)] = {
+      joinShardedTables[T,I,K](this, innerRdd, outerKey, innerKey)
+    }
+
     /**
       * Converts DataFrame to an Array
       */
@@ -287,6 +318,9 @@ trait DataFrames extends Base {
       val shards = par(nShards, (node: Rep[Int]) => view(node).toArray)
       shards.fold[ArrayBuffer[T]](ArrayBuffer.empty[T], fun { p => p._1 ++= p._2 })
     }
+
+    override def getShard(node: Rep[Int]): DF[T] = view(node)
+    override def gather: DF[T] = ArrayDF(toArray)
   }
 
   trait ShardedViewDFCompanion extends ConcreteClass1[ShardedViewDF] {
@@ -294,13 +328,20 @@ trait DataFrames extends Base {
       ShardedViewDF(nShards, view)
     }
   }
-
 }
 
 trait DataFramesDsl extends ScalanCommunityDsl with impl.DataFramesAbs {
 }
 
-trait DataFramesDslSeq extends ScalanCommunityDslSeq with impl.DataFramesSeq { }
+trait DataFramesDslSeq extends ScalanCommunityDslSeq with impl.DataFramesSeq {
+  def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
+    val map = MMultiMap.fromArray[K, I](genericArrayOps(inner.toArray).map(i => (inKey(i), i)))
+    ArrayDF[(T, I)](genericArrayOps(outer.toArray).flatMap(o => genericArrayOps(map(outKey(o)).toArray).map(i => (o, i))))
+  }
+  def joinShardedTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
+    joinTables(outer, inner, outKey, inKey)
+  }
+}
 
 trait DataFramesDslExp extends ScalanCommunityDslExp with impl.DataFramesExp {
 
@@ -363,6 +404,38 @@ trait DataFramesDslExp extends ScalanCommunityDslExp with impl.DataFramesExp {
     fun { (in: Rep[(T,T)]) =>
       val Pair(a,b) = in
       compare(a,b,fields)
+    }
+  }
+
+  def joinTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
+    println(s"Simple join of ${outer} and ${inner}")
+    val map = MMultiMap.fromArray[K, I](inner.toArray.map(i => (inKey(i), i)))
+    ArrayDF[(T, I)](outer.toArray.flatMap((o: Rep[T]) => map(outKey(o)).toArray.map(i => (o, i))))
+  }
+
+  def isSameColumn(x: Exp[_], exp: Exp[_]): Boolean = exp match {
+    case Def(First(`x`)) => true // TODO To honestly check equality of sharding key and join key an additional mechanism is needed
+    case _ => false
+  }
+
+  def joinShardedTables[T:Elem, I:Elem, K:Elem](outer: DF[T], inner: DF[I], outKey: Rep[T => K], inKey: Rep[I => K]): DF[(T,I)] = {
+    val Def(outKeyDef: Lambda[_, _]) = outKey
+    val Def(inKeyDef: Lambda[_, _]) = inKey
+
+    // Perform join for separate shards
+    if (isSameColumn(outKeyDef.x, outKeyDef.y) && isSameColumn(inKeyDef.x, inKeyDef.y)) {
+      println(s"Columns of ${outer} and ${inner} are the same")
+      ShardedViewDF.create(outer.nShards,
+        (node: Rep[Int]) => outer
+          .getShard(node)
+          .join(inner.getShard(node), outKey, inKey, 0, 0))
+    }
+    else {
+      println(s"Columns of ${outer} and ${inner} are different")
+      ShardedViewDF.create(outer.nShards,
+        (node: Rep[Int]) => outer
+          .getShard(node)
+          .join(inner.gather, outKey, inKey, 0, 0))
     }
   }
 }
