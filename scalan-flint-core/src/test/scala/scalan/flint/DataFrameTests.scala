@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import scala.language.reflectiveCalls
 import scalan._
 import scalan.common.{SegmentsDsl, SegmentsDslExp, Lazy}
-import scalan.compilation.{DummyCompiler, DummyCompilerWithPasses}
+import scalan.compilation.{StructsCompiler, DummyCompiler, DummyCompilerWithPasses}
 import scalan.flint.{DataFramesDslExp, DataFramesDsl}
 
 class DataFrameTests extends BaseViewTests {
