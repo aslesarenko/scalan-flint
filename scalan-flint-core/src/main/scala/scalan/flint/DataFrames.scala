@@ -2,6 +2,7 @@ package scalan.flint
 
 import scalan._
 import scalan.collections._
+import scala.reflect.runtime.universe._
 
 trait DataFrames extends Base {
   self: DataFramesDsl =>
@@ -10,7 +11,6 @@ trait DataFrames extends Base {
 
   trait DataFrame[Row] extends Def[DataFrame[Row]] {
     implicit def eRow: Elem[Row]
-
     /**
      * Filter input RDD
      */
@@ -85,7 +85,6 @@ trait DataFrames extends Base {
 
   @InternalType
   trait FlintDataFrame[T] extends DataFrame[T] {
-
     /**
      * Filter input RDD
      * template<bool (*predicate)(T const&)>
@@ -261,6 +260,18 @@ trait DataFrames extends Base {
 }
 
 trait DataFramesDsl extends CollectionsDsl with MultiMapsDsl with impl.DataFramesAbs {
+  trait DataFrameFunctor extends Functor[DataFrame] {
+    def tag[A](implicit evA: WeakTypeTag[A]) = weakTypeTag[DataFrame[A]]
+    def lift[A](implicit evA: Elem[A]) = element[DataFrame[A]]
+    def unlift[T](implicit eFT: Elem[DataFrame[T]]) = eFT.asInstanceOf[DataFrameElem[T,_]].eRow
+    def getElem[T](fa: Rep[DataFrame[T]]) = fa.selfType1
+    def unapply[A](e: Elem[_]) = e match {
+      case te: DataFrameElem[_, _] => Some(te.asElem[DataFrame[A]])
+      case _ => None
+    }
+    def map[A:Elem,B:Elem](xs: Rep[DataFrame[A]])(f: Rep[A] => Rep[B]) = xs.project(fun(f))
+  }
+  implicit val dataFrameContainer: Functor[DataFrame] = new DataFrameFunctor {}
 }
 
 trait DataFramesDslSeq extends CollectionsDslSeq with MultiMapsDslSeq with impl.DataFramesSeq { }
