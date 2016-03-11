@@ -242,7 +242,7 @@ trait DataFrames extends Base {
                              (implicit val eRow: Elem[Row])
     extends DataFrame[Row] with TableDF[Row] {
     override def toArray = {
-      shards.fold[ArrayBuffer[Row]](ArrayBuffer.empty[Row], fun{ p: Rep[(ArrayBuffer[Row], DataFrame[Row])] => p._1 ++= p._2.toArray})
+      shards.fold[ArrayBuffer[Row]](ArrayBuffer.empty[Row], fun { p: Rep[(ArrayBuffer[Row], DataFrame[Row])] => p._1 ++= p._2.toArray }).toArray
     }
 //    override def toArray = {
 //      val lElem = toLazyElem(pairElement(element[ArrayBuffer[T]], element[DataFrame[T]]))
@@ -274,7 +274,7 @@ trait DataFramesDsl extends CollectionsDsl with MultiMapsDsl with impl.DataFrame
   implicit val dataFrameContainer: Functor[DataFrame] = new DataFrameFunctor {}
 }
 
-trait DataFramesDslSeq extends CollectionsDslSeq with MultiMapsDslSeq with impl.DataFramesSeq { }
+trait DataFramesDslStd extends CollectionsDslStd with MultiMapsDslStd with impl.DataFramesStd { }
 
 trait DataFramesDslExp extends CollectionsDslExp with MultiMapsDslExp with impl.DataFramesExp {
 

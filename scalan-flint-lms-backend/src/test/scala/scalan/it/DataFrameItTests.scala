@@ -1,6 +1,6 @@
 package scalan.it
 
-import scalan.flint.{DataFramesDslExp, DataFramesDslSeq, DataFramesDsl}
+import scalan.flint.{DataFramesDslExp, DataFramesDslStd, DataFramesDsl}
 import scalan.compilation.lms.scalac._
 
 /**
@@ -48,9 +48,9 @@ trait DataFrameItTestsProg extends DataFramesDsl {
   }
 }
 
-class DataFrameItTestsProgSeq extends DataFramesDslSeq with DataFrameItTestsProg
+class DataFrameItTestsProgStd extends DataFramesDslStd with DataFrameItTestsProg
 
-class DataFrameItTests extends BaseItTests[DataFrameItTestsProg](new DataFrameItTestsProgSeq) {
+class DataFrameItTests extends BaseItTests[DataFrameItTestsProg](new DataFrameItTestsProgStd) {
   class ScalanCake extends DataFramesDslExp with DataFrameItTestsProg {
     override val cacheElems = false
     //      override val cacheIsos = false
@@ -62,17 +62,17 @@ class DataFrameItTests extends BaseItTests[DataFrameItTestsProg](new DataFrameIt
 
   test("arrT1") {
     val in = Array((3, 11), (6, 22), (9, 33), (12, 44), (15, 55))
-    compareOutputWithSequential(_.arrT1)(in)
+    compareOutputWithStd(_.arrT1)(in)
   }
   test("arrT2") {
     val in1 = Array((3, 11), (6, 22), (9, 33), (12, 44), (15, 55))
     val in2 = Array((3, 1.1), (6, 2.2), (9, 3.3), (12, 4.4), (15, 5.5))
-    compareOutputWithSequential(_.arrT2)((in1, in2))
+    compareOutputWithStd(_.arrT2)((in1, in2))
   }
   test("pairT1") {
     val in1 = Array(3, 6, 9, 12, 15)
     val in2 = Array(11, 22, 33, 44, 55)
-    compareOutputWithSequential(_.pairT1)((in1, in2))
+    compareOutputWithStd(_.pairT1)((in1, in2))
   }
   test("pairT2") {
     val in1 = Array(3, 6, 9, 12, 15)
@@ -80,10 +80,10 @@ class DataFrameItTests extends BaseItTests[DataFrameItTestsProg](new DataFrameIt
 
     val in3 = Array(3, 6, 9, 12, 15)
     val in4 = Array(1.1, 2.2, 3.3, 4.4, 5.5)
-    compareOutputWithSequential(_.pairT2)(((in1, in2),(in3, in4)))
+    compareOutputWithStd(_.pairT2)(((in1, in2),(in3, in4)))
   }
   test("shardedT1") {
     val in = Array((3, 11), (6, 22), (9, 33), (12, 44), (15, 55))
-    compareOutputWithSequential(_.shardedT1)(in)
+    compareOutputWithStd(_.shardedT1)(in)
   }
 }

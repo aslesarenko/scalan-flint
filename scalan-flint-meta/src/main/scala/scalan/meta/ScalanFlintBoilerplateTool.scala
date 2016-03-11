@@ -7,7 +7,7 @@ object ScalanFlintBoilerplateTool extends BoilerplateTool {
     entityFiles = List(
       "scalan/flint/DataFrames.scala"),
     baseContextTrait = "Scalan",
-    seqContextTrait = "ScalanSeq",
+    seqContextTrait = "ScalanStd",
     stagedContextTrait = "ScalanExp",
     extraImports = List(
         "scala.reflect.runtime.universe._",

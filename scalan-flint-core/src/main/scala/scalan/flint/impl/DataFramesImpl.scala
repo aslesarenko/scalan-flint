@@ -114,13 +114,14 @@ trait DataFramesAbs extends Scalan with DataFrames {
     def selfType = FlintFileDFCompanionElem
     override def toString = "FlintFileDF"
 
+    @scalan.OverloadId("fromFields")
     def apply[Row](fileName: Rep[String])(implicit eRow: Elem[Row]): Rep[FlintFileDF[Row]] =
       mkFlintFileDF(fileName)
-  }
-  object FlintFileDFMatcher {
+
     def unapply[Row](p: Rep[DataFrame[Row]]) = unmkFlintFileDF(p)
   }
-  lazy val FlintFileDF: Rep[FlintFileDFCompanionAbs] = new FlintFileDFCompanionAbs
+  lazy val FlintFileDFRep: Rep[FlintFileDFCompanionAbs] = new FlintFileDFCompanionAbs
+  lazy val FlintFileDF: FlintFileDFCompanionAbs = proxyFlintFileDFCompanion(FlintFileDFRep)
   implicit def proxyFlintFileDFCompanion(p: Rep[FlintFileDFCompanionAbs]): FlintFileDFCompanionAbs = {
     proxyOps[FlintFileDFCompanionAbs](p)
   }
@@ -199,13 +200,14 @@ trait DataFramesAbs extends Scalan with DataFrames {
     def selfType = InputDFCompanionElem
     override def toString = "InputDF"
 
+    @scalan.OverloadId("fromFields")
     def apply[Row](dataSourceId: Rep[String])(implicit eRow: Elem[Row]): Rep[InputDF[Row]] =
       mkInputDF(dataSourceId)
-  }
-  object InputDFMatcher {
+
     def unapply[Row](p: Rep[DataFrame[Row]]) = unmkInputDF(p)
   }
-  lazy val InputDF: Rep[InputDFCompanionAbs] = new InputDFCompanionAbs
+  lazy val InputDFRep: Rep[InputDFCompanionAbs] = new InputDFCompanionAbs
+  lazy val InputDF: InputDFCompanionAbs = proxyInputDFCompanion(InputDFRep)
   implicit def proxyInputDFCompanion(p: Rep[InputDFCompanionAbs]): InputDFCompanionAbs = {
     proxyOps[InputDFCompanionAbs](p)
   }
@@ -284,13 +286,14 @@ trait DataFramesAbs extends Scalan with DataFrames {
     def selfType = PhysicalRddDFCompanionElem
     override def toString = "PhysicalRddDF"
 
+    @scalan.OverloadId("fromFields")
     def apply[Row](dataSourceId: Rep[String])(implicit eRow: Elem[Row]): Rep[PhysicalRddDF[Row]] =
       mkPhysicalRddDF(dataSourceId)
-  }
-  object PhysicalRddDFMatcher {
+
     def unapply[Row](p: Rep[DataFrame[Row]]) = unmkPhysicalRddDF(p)
   }
-  lazy val PhysicalRddDF: Rep[PhysicalRddDFCompanionAbs] = new PhysicalRddDFCompanionAbs
+  lazy val PhysicalRddDFRep: Rep[PhysicalRddDFCompanionAbs] = new PhysicalRddDFCompanionAbs
+  lazy val PhysicalRddDF: PhysicalRddDFCompanionAbs = proxyPhysicalRddDFCompanion(PhysicalRddDFRep)
   implicit def proxyPhysicalRddDFCompanion(p: Rep[PhysicalRddDFCompanionAbs]): PhysicalRddDFCompanionAbs = {
     proxyOps[PhysicalRddDFCompanionAbs](p)
   }
@@ -369,13 +372,14 @@ trait DataFramesAbs extends Scalan with DataFrames {
     def selfType = ArrayDFCompanionElem
     override def toString = "ArrayDF"
 
+    @scalan.OverloadId("fromFields")
     def apply[Row](records: Rep[Array[Row]])(implicit eRow: Elem[Row]): Rep[ArrayDF[Row]] =
       mkArrayDF(records)
-  }
-  object ArrayDFMatcher {
+
     def unapply[Row](p: Rep[DataFrame[Row]]) = unmkArrayDF(p)
   }
-  lazy val ArrayDF: Rep[ArrayDFCompanionAbs] = new ArrayDFCompanionAbs
+  lazy val ArrayDFRep: Rep[ArrayDFCompanionAbs] = new ArrayDFCompanionAbs
+  lazy val ArrayDF: ArrayDFCompanionAbs = proxyArrayDFCompanion(ArrayDFRep)
   implicit def proxyArrayDFCompanion(p: Rep[ArrayDFCompanionAbs]): ArrayDFCompanionAbs = {
     proxyOps[ArrayDFCompanionAbs](p)
   }
@@ -455,15 +459,17 @@ trait DataFramesAbs extends Scalan with DataFrames {
   class PairDFCompanionAbs extends CompanionDef[PairDFCompanionAbs] with PairDFCompanion {
     def selfType = PairDFCompanionElem
     override def toString = "PairDF"
+    @scalan.OverloadId("fromData")
     def apply[L, R](p: Rep[PairDFData[L, R]])(implicit eL: Elem[L], eR: Elem[R]): Rep[PairDF[L, R]] =
       isoPairDF(eL, eR).to(p)
+    @scalan.OverloadId("fromFields")
     def apply[L, R](left: DF[L], right: DF[R])(implicit eL: Elem[L], eR: Elem[R]): Rep[PairDF[L, R]] =
       mkPairDF(left, right)
-  }
-  object PairDFMatcher {
+
     def unapply[L, R](p: Rep[DataFrame[(L, R)]]) = unmkPairDF(p)
   }
-  lazy val PairDF: Rep[PairDFCompanionAbs] = new PairDFCompanionAbs
+  lazy val PairDFRep: Rep[PairDFCompanionAbs] = new PairDFCompanionAbs
+  lazy val PairDF: PairDFCompanionAbs = proxyPairDFCompanion(PairDFRep)
   implicit def proxyPairDFCompanion(p: Rep[PairDFCompanionAbs]): PairDFCompanionAbs = {
     proxyOps[PairDFCompanionAbs](p)
   }
@@ -541,15 +547,17 @@ trait DataFramesAbs extends Scalan with DataFrames {
   class ShardedDFCompanionAbs extends CompanionDef[ShardedDFCompanionAbs] with ShardedDFCompanion {
     def selfType = ShardedDFCompanionElem
     override def toString = "ShardedDF"
+    @scalan.OverloadId("fromData")
     def apply[Row](p: Rep[ShardedDFData[Row]])(implicit eRow: Elem[Row]): Rep[ShardedDF[Row]] =
       isoShardedDF(eRow).to(p)
+    @scalan.OverloadId("fromFields")
     def apply[Row](nShards: Rep[Int], distrib: Rep[Row => Int], shards: Rep[Array[DataFrame[Row]]])(implicit eRow: Elem[Row]): Rep[ShardedDF[Row]] =
       mkShardedDF(nShards, distrib, shards)
-  }
-  object ShardedDFMatcher {
+
     def unapply[Row](p: Rep[DataFrame[Row]]) = unmkShardedDF(p)
   }
-  lazy val ShardedDF: Rep[ShardedDFCompanionAbs] = new ShardedDFCompanionAbs
+  lazy val ShardedDFRep: Rep[ShardedDFCompanionAbs] = new ShardedDFCompanionAbs
+  lazy val ShardedDF: ShardedDFCompanionAbs = proxyShardedDFCompanion(ShardedDFRep)
   implicit def proxyShardedDFCompanion(p: Rep[ShardedDFCompanionAbs]): ShardedDFCompanionAbs = {
     proxyOps[ShardedDFCompanionAbs](p)
   }
@@ -577,90 +585,90 @@ trait DataFramesAbs extends Scalan with DataFrames {
   registerModule(DataFrames_Module)
 }
 
-// Seq -----------------------------------
-trait DataFramesSeq extends ScalanSeq with DataFramesDsl {
-  self: DataFramesDslSeq =>
+// Std -----------------------------------
+trait DataFramesStd extends ScalanStd with DataFramesDsl {
+  self: DataFramesDslStd =>
   lazy val DataFrame: Rep[DataFrameCompanionAbs] = new DataFrameCompanionAbs {
   }
 
-  case class SeqFlintFileDF[Row]
+  case class StdFlintFileDF[Row]
       (override val fileName: Rep[String])(implicit eRow: Elem[Row])
     extends AbsFlintFileDF[Row](fileName) {
   }
 
   def mkFlintFileDF[Row]
     (fileName: Rep[String])(implicit eRow: Elem[Row]): Rep[FlintFileDF[Row]] =
-    new SeqFlintFileDF[Row](fileName)
+    new StdFlintFileDF[Row](fileName)
   def unmkFlintFileDF[Row](p: Rep[DataFrame[Row]]) = p match {
     case p: FlintFileDF[Row] @unchecked =>
       Some((p.fileName))
     case _ => None
   }
 
-  case class SeqInputDF[Row]
+  case class StdInputDF[Row]
       (override val dataSourceId: Rep[String])(implicit eRow: Elem[Row])
     extends AbsInputDF[Row](dataSourceId) {
   }
 
   def mkInputDF[Row]
     (dataSourceId: Rep[String])(implicit eRow: Elem[Row]): Rep[InputDF[Row]] =
-    new SeqInputDF[Row](dataSourceId)
+    new StdInputDF[Row](dataSourceId)
   def unmkInputDF[Row](p: Rep[DataFrame[Row]]) = p match {
     case p: InputDF[Row] @unchecked =>
       Some((p.dataSourceId))
     case _ => None
   }
 
-  case class SeqPhysicalRddDF[Row]
+  case class StdPhysicalRddDF[Row]
       (override val dataSourceId: Rep[String])(implicit eRow: Elem[Row])
     extends AbsPhysicalRddDF[Row](dataSourceId) {
   }
 
   def mkPhysicalRddDF[Row]
     (dataSourceId: Rep[String])(implicit eRow: Elem[Row]): Rep[PhysicalRddDF[Row]] =
-    new SeqPhysicalRddDF[Row](dataSourceId)
+    new StdPhysicalRddDF[Row](dataSourceId)
   def unmkPhysicalRddDF[Row](p: Rep[DataFrame[Row]]) = p match {
     case p: PhysicalRddDF[Row] @unchecked =>
       Some((p.dataSourceId))
     case _ => None
   }
 
-  case class SeqArrayDF[Row]
+  case class StdArrayDF[Row]
       (override val records: Rep[Array[Row]])(implicit eRow: Elem[Row])
     extends AbsArrayDF[Row](records) {
   }
 
   def mkArrayDF[Row]
     (records: Rep[Array[Row]])(implicit eRow: Elem[Row]): Rep[ArrayDF[Row]] =
-    new SeqArrayDF[Row](records)
+    new StdArrayDF[Row](records)
   def unmkArrayDF[Row](p: Rep[DataFrame[Row]]) = p match {
     case p: ArrayDF[Row] @unchecked =>
       Some((p.records))
     case _ => None
   }
 
-  case class SeqPairDF[L, R]
+  case class StdPairDF[L, R]
       (override val left: DF[L], override val right: DF[R])(implicit eL: Elem[L], eR: Elem[R])
     extends AbsPairDF[L, R](left, right) {
   }
 
   def mkPairDF[L, R]
     (left: DF[L], right: DF[R])(implicit eL: Elem[L], eR: Elem[R]): Rep[PairDF[L, R]] =
-    new SeqPairDF[L, R](left, right)
+    new StdPairDF[L, R](left, right)
   def unmkPairDF[L, R](p: Rep[DataFrame[(L, R)]]) = p match {
     case p: PairDF[L, R] @unchecked =>
       Some((p.left, p.right))
     case _ => None
   }
 
-  case class SeqShardedDF[Row]
+  case class StdShardedDF[Row]
       (override val nShards: Rep[Int], override val distrib: Rep[Row => Int], override val shards: Rep[Array[DataFrame[Row]]])(implicit eRow: Elem[Row])
     extends AbsShardedDF[Row](nShards, distrib, shards) {
   }
 
   def mkShardedDF[Row]
     (nShards: Rep[Int], distrib: Rep[Row => Int], shards: Rep[Array[DataFrame[Row]]])(implicit eRow: Elem[Row]): Rep[ShardedDF[Row]] =
-    new SeqShardedDF[Row](nShards, distrib, shards)
+    new StdShardedDF[Row](nShards, distrib, shards)
   def unmkShardedDF[Row](p: Rep[DataFrame[Row]]) = p match {
     case p: ShardedDF[Row] @unchecked =>
       Some((p.nShards, p.distrib, p.shards))
@@ -1013,7 +1021,7 @@ trait DataFramesExp extends ScalanExp with DataFramesDsl {
 }
 
 object DataFrames_Module extends scalan.ModuleInfo {
-  val dump = "H4sIAAAAAAAAAO1YTWwbRRQeO/6J7TQJaamgUkJiDOXXTitQDzlUwYkhyCSWNyBkqlbj3bGzZXd2MzsONoeKU4XghrhwQKISF6ReECdUqUJClRCHniqExIkDp1JU9UDFAcTMeH/ttWuHNnBgD6Pd2Tfv53vfezuzl2+BuEXAk5YMNYjzOqIwL4n7VYvmpHVMVdp5zVBaGlpDjUeMbz478cWxr6NgpgYSO9Bas7QaSHVv1tumey+h3TJIQSwjixrEomCpLCwUZEPTkExVAxdUXW9RWNdQoaxadKUMYnVD6eyCCyBSBrOygWWCKJKKGrQsZNnzk4h7pLrPKfHc2TI9G7jAoyj4otgmUKXMfWZjtitfRabUwQbu6BRM265tmdwtJpNUddMg1DGRZOp2DMV5jGHIJsBc+TzcgwVmolmQKFFxk63MmFB+GzbRJhPh4jHmsIW0xnbHFM8TZZC20C4DaEM3NTHTNgEALAMnhRN5D5+8i0+e45OTEFGhpr4L+csKMdod0L0iEwC0TabiuXuocDSgdazkPjgjv3VXyuhRvrjNXUmKCBNM0WMD2CBSwXD8rvqRdeflS6eiIF0DadVarVuUQJn6U26jlYEYG1T47AIISZNlKzsoW8LKKpPpoURKNnQTYqbJhnKK5UlTZZVyYT43ZWdnAPRJaiJHNNI2I268iwPiFbwpQk2r3Hz0+Sd+XX8zCqJBEymmUmLEJ45SClJrkMISYTK2fj7OUDBRNd4RMPMh1Xamp0uaiuloa7wxOcRrF7/jN39Tri2DM1EXddvJ0RLNVMStH3/I3Hj6dBRM1kRZlDTYrDHgrXUN6VukaGBaA5PGHiLdN8k9qPG70MQnFdSALY3a6fDjOMFwpGBxYAGbiIO8Iool4gCQ6fJ908AoV6rkfpe+//gypzMBU9033Yr+Sz3150/TDSqYTsFkQ9VEgXogIw+RxwdRwUQVouqs9eyhF7+98vrtq5txwYY5O6g3oNZC3UZgx+TFx81Gs1kKEp5AbzbTXZclQ0cPZe+oZy99SEXeIu1gr9mqn2fFvSLWLQ1JodPzvrx48eHbn587LGp1sq5SHZq55TEq1SmsB1iJIMj66aLd+wUNTwRfZkS9lFgO10oDSoOPx9x3YsiyDBzxrSz6A8j6lvmMzUccrgkhCmKIlaPjR4xXwAjV2u9x1iXb/GCyMXSOVstHtFunr0ZB/FUQb7CqssogXjdaWHFgZx9Jitr0JWcuEoSdwQxZU3FhFtci8GIO70qZSDCuA+poffiDHvynFKZTMlpERhtKf/Xy4alwtc+KMT8Oz5Ib2GzRcTk2a686SH75Pc36VhT/z/cY+T5U2elYKqvBqqKMm/WjgbUHmft+r/8NBiS3+R5zrXT/Up8kSDaIYoV8o+2Z+CohsDOixX/aC4StsXuBvepAe4HP0wfDhCE7DhNtt0wNvXDlj7Pvv/eKKbYvfRvkoPpI2cODP1b7YhrCsevj6hqLgjENNaijLNpLbtuYz8c+BXGiNneGaAj3b3SSngy+TFSgSsbl6Ex30b4oGkXlIQQNAahfQXWYgn58AkHek95+PoQLVHtd/O/1QSztwMF98DgLYpnNbmA6jIlJhZ3+iVoP0ULAwuByLrWwfGPjk8Mz8+d+FoedhGLoUBUsWWB7UcIOJGKvuWDXdU+0kaVhXiWsYaENaPEjZmRY1e/jA5ASWUBjbwzm3HUH+REIejvuZ8CXskQoUhPsVHlfktIHWyA9PdNh6LpmQ9AN/InZPw6cxVVPyhZNewFT+2cDzjf4NtgOgTBz4WUl2SdhBuKFu59uPnP9q19EaaX5mdrACLv/Hf3/D4K4HvLMr1maz2fGEn7SFv7+DRmyu43aFQAA"
+  val dump = "H4sIAAAAAAAAAO1YTWwbRRQe/8d2moS0VAIpITGG8muHClSkHKpgxxBkEssbEDJVq/HuONmyO7vMjoPNoeJUIbghLhw4VELi0gvqgUNRLwip4tBThZA49cCpFFU9UHEAMTPeX3vt2qENHNjDaHf2zfv53vfezuzFWyBhEfCkJUMN4oKOKCxI4n7NonlpHVOVdt8wlLaGyqh146uXL+Vi33wbBbMNkNyFVtnSGiDdu1nvmO69RJUqSEMsI4saxKJguSosFGVD05BMVQMXVV1vU9jUULGqWnS1CuJNQ+m+B86BSBXMyQaWCaJIKmnQspBlz08h7pHqPqfFc3fL9GzgIo+i6Itim0CVMveZjbmefB2ZUhcbuKtTMGO7tmVyt5hMStVNg1DHRIqp2zUU5zGOIZsA89WzcA8WmYmdokSJinfYyqwJ5XfhDtpkIlw8zhy2kNba7priOVYFGYsqDKAN3dTETMcEALAMHBdOFDx8Ci4+BY5PXkJEhZr6AeQva8TodEHvisQA6JhMxXP3UOFoQOtYyX98Sn7nrpTVo3xxh7uSEhEmmaLHhrBBpILheLX+qXXn1QsnoiDTABnVWmtalECZ+lNuo5WFGBtU+OwCCMkOy1ZuWLaElTUm00eJtGzoJsRMkw3lNMuTpsoq5cJ8btrOzhDoU9REjmikY0bceJeGxCt4U4KaVrv5yPNP/Lr+dhREgybSTKXEiE8cpRSky5DCCmEytn4+zlIQqxvvC5j5kO440zMVTcV0vDXemBrhtYvfsZu/Kd+vgFNRF3XbyfESzVQkrJ9+zF5/+mQUTDVEWVQ0uNNgwFvrGtK3SMnAtAGmjD1Eem9Se1Djd6GJTymoBdsatdPhxzHGcKRgaWgBm4iDvCqKJeIAkO3xfdPAKF+p5X+XfvjsIqczAdO9N72K/ks98efPMy0qmE7BVEvVRIF6ICMPkceHUcFENaLqrPXsoZe+u/zm7SubCcGGeTuot6DWRr1GYMfkxcfNRnM5CpKeQH82Mz2XJUNHD+XuqKcvfEJF3iKdYK/Zap5lxb0q1i2PSKHT874+f/7h21+eOSxqdaqpUh2a+ZUJKtUprAdYiSDI+pmS3fsFDV8IvsyKeqmwHJYrQ0qDj4+678SQYxk44ltZ8geQ8y3zGVuIOFwTQhTEEStHx484r4AxqnXQ45xLtoXhZGPoHK1Xj2i3Tl6JgsTrINFiVWVVQaJptLHiwM4+khR16CvOXCQIO4MZsqbiwiyuJeDFHN6VspFgXAfU0QbwB334TytMp2S0iYw2lMHq5cNT4WqfFWNhEp6lNrDZppNybM5edZD88nua860o/Z/vCfJ9qLbbtVRWg3VFmTTrRwNrDzL3g17/GwxIbfM9Zrly/1KfIkg2iGKFfKPtmcQaIbA7psV/2guErYl7gb3qQHuBz9MHw4QROw4TbbdNDb14+Y/TH334mim2LwMb5KD6SNXDgz/WB2IawbFrk+qaiIJxDbWooyzaT27bmM/HAQUJou7sjtAQ7t/4JD0efJmsQZVMytHZ3qJ9UTSKqiMIGgLQoIL6KAWD+ASCvCe9/XwIF6j3u/jf64NY2oXD++AxFsQKm93AdBQTUwo7/RO1GaKFgMXh5VxpY/n6xueHZxfO3BCHnaRi6FAVLFlke1HCDiRir7lo13VftJHlUV4lrVGhDWnxY2ZkVNXv4wOQFllAE28M5t11B/kRCHo76WfAl7JkKFIxdqq8L0kZgC2Qnr7pMHRdsyHoBv7E7B8HzuK6J2WLZryAqf2zARdafBtsh0CYufCykuyTMAPx3N0vNp+5dukXUVoZfqY2MMLuf0f//4Mgroc882VL8/nMWMJP2sLfvwEOKfEB2hUAAA=="
 }
 }
 
